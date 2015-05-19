@@ -1,17 +1,17 @@
-attribute vec4 position;
-attribute vec3 normal;
+#version 330
 
-uniform vec3 light;
+layout (location = 0 ) in vec3 position;
+layout (location = 1 ) in vec4 color;
+layout (location = 2 ) in vec3 normal;
 
-varying vec3 Normal;
-varying vec3 FragPos;
-varying float texcoord;
+out vec3 myPosition;
+out vec3 myNormal;
+out vec4 myColor;
 
 void main(){
-	texcoord = position.w;
+	myPosition = position;
+	myNormal = normal;
+	myColor = color;
 
-    gl_Position = gl_ModelViewProjectionMatrix * vec4(position.xyz, 1.0);
-    vec4 fp = gl_ModelViewMatrix * vec4(position.xyz,1.0);//vec3(gl_ModelView * vec4(position.xyz, 1.0));
-    FragPos = fp.xyz;
-    Normal = normal;//mat3(transpose(inverse(gl_ModelView))) * normal;  
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * vec4(position,1.0);
 } 
