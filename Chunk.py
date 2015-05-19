@@ -2,6 +2,7 @@ from OpenGL.GL import *
 from ctypes import *
 import numpy
 from OpenGL.arrays import vbo
+import utils
 
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 #       _____________   #           +1   -1       #
@@ -18,43 +19,22 @@ from OpenGL.arrays import vbo
 #  001        101       #     +1    -1            #
 # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-va = None
-no = None
-
-def normalize_v3(arr):
-    ''' Normalize a numpy array of 3 component vectors shape=(n,3) '''
-    lens = numpy.sqrt( arr[:,0]**2 + arr[:,1]**2 + arr[:,2]**2 )
-    arr[:,0] /= lens
-    arr[:,1] /= lens
-    arr[:,2] /= lens                
-    return arr
-
 def myExtend(l,*args):
 	for e in args:
 		l.append(e)
 
-def genVertices(size):
-	(CX,CY,CZ) = size
-	d = 1.0
-	vertices = []
-	for x in xrange(CX+1):
-		for y in xrange(CY+1):
-			for z in xrange(CZ+1):
-				myExtend( vertices, x  , y  , z   ) # 000 - 0
-				#myExtend( vertices, x  , y  , z+d ) # 001 - 1
-				#myExtend( vertices, x  , y+d, z   ) # 010 - 2
-				#myExtend( vertices, x  , y+d, z+d ) # 011 - 3
-				#myExtend( vertices, x+d, y  , z   ) # 100 - 4
-				#myExtend( vertices, x+d, y  , z+d ) # 101 - 5
-				#myExtend( vertices, x+d, y+d, z   ) # 110 - 6
-				#myExtend( vertices, x+d, y+d, z+d ) # 111 - 7
-	return numpy.array(vertices,numpy.float32)
-
 class Chunk:
 	SIZE = (16,16,16)
-	#VERTICES = genVertices(SIZE)
+	color = [
+		(0.0,0.0,1.0,1.0),
+		(0.0,1.0,0.0,1.0),
+		(1.0,0.0,0.0,1.0),
+		(0.5,0.5,0.0,1.0),
+		(0.0,0.5,0.5,1.0),
+		(0.5,0.0,0.5,1.0)]
 
-	def __init__(self):
+	def __init__(self,position=(0,0,0)):
+		self.position = position
 		(x,y,z) = Chunk.SIZE
 		self.voxels = [None]*x*y*z
 		self.changed = True
@@ -63,6 +43,11 @@ class Chunk:
 
 	def get(self,x,y,z):
 		(CX,CY,CZ) = Chunk.SIZE
+
+		if x<0 or x>=CX: return 0
+		if y<0 or y>=CY: return 0
+		if z<0 or z>=CZ: return 0
+
 		n = CX*CY*z + CX*y + x
 		return self.voxels[n]
 
@@ -77,134 +62,148 @@ class Chunk:
 
 		(CX,CY,CZ) = Chunk.SIZE
 
-		vertices = []
-		d = 1
+		vertices = numpy.zeros(CX*CY*CZ*36, [
+								("position", numpy.float32, 3),
+								("color"   , numpy.float32, 4),
+								("normal"  , numpy.float32, 3)])
+		(px,py,pz) = self.position
+		l = 0
 		for x in xrange(CX):
 			for y in xrange(CY):
 				for z in xrange(CZ):
 					# the python way is always mysterious and unknown
 					aType = self.get(x,y,z)
 
+					top    = self.get(x,y+1,z)
+					bottom = self.get(x,y-1,z)
+					front  = self.get(x,y,z-1)
+					back   = self.get(x,y,z+1)
+					right  = self.get(x+1,y,z)
+					left   = self.get(x-1,y,z)
+
 					# Empty block?
 					if aType in (0,None):
 						continue
-					
-					# view from negative x
-					myExtend( vertices, x  , y  , z  , aType,    +1.0,  0.0,  0.0 )
-					myExtend( vertices, x  , y  , z+d, aType,    +1.0,  0.0,  0.0 )
-					myExtend( vertices, x  , y+d, z+d, aType,    +1.0,  0.0,  0.0 )
-					myExtend( vertices, x  , y+d, z+d, aType,    +1.0,  0.0,  0.0 )
-					myExtend( vertices, x  , y+d, z  , aType,    +1.0,  0.0,  0.0 )
-					myExtend( vertices, x  , y  , z  , aType,    +1.0,  0.0,  0.0 )
 
-					# view from positive x
-					myExtend( vertices, x+d, y  , z  , aType,    -1.0,  0.0,  0.0 )
-					myExtend( vertices, x+d, y+d, z+d, aType,    -1.0,  0.0,  0.0 )
-					myExtend( vertices, x+d, y  , z+d, aType,    -1.0,  0.0,  0.0 )
-					myExtend( vertices, x+d, y+d, z+d, aType,    -1.0,  0.0,  0.0 )
-					myExtend( vertices, x+d, y  , z  , aType,    -1.0,  0.0,  0.0 )
-					myExtend( vertices, x+d, y+d, z  , aType,    -1.0,  0.0,  0.0 )
+					(xi,yi,zi) = (px+x,py+y,pz+z)
+					(xf,yf,zf) = (xi+1,yi+1,zi+1)
+					#vertices[l:l+36] = utils.createCube((i,j,k),(i+1,j+1,k+1),Chunk.color[aType-1])
 
-					# view from negative y
-					myExtend( vertices, x+d, y  , z  , aType,     0.0, +1.0,  0.0 )
-					myExtend( vertices, x+d, y  , z+d, aType,     0.0, +1.0,  0.0 )
-					myExtend( vertices, x  , y  , z+d, aType,     0.0, +1.0,  0.0 )
-					myExtend( vertices, x  , y  , z+d, aType,     0.0, +1.0,  0.0 )
-					myExtend( vertices, x  , y  , z  , aType,     0.0, +1.0,  0.0 )
-					myExtend( vertices, x+d, y  , z  , aType,     0.0, +1.0,  0.0 )
+					color = Chunk.color[aType-1]
 
-					# view from positive y
-					myExtend( vertices, x+d, y+d, z  , aType,     0.0, -1.0,  0.0 )
-					myExtend( vertices, x  , y+d, z+d, aType,     0.0, -1.0,  0.0 )
-					myExtend( vertices, x+d, y+d, z+d, aType,     0.0, -1.0,  0.0 )
-					myExtend( vertices, x  , y+d, z+d, aType,     0.0, -1.0,  0.0 )
-					myExtend( vertices, x+d, y+d, z  , aType,     0.0, -1.0,  0.0 )
-					myExtend( vertices, x  , y+d, z  , aType,     0.0, -1.0,  0.0 )
+					if left in (0,None):
+						vertices["position"][l:l+6] = [
+							(xi, yi, zi),
+							(xi, yi, zf),
+							(xi, yf, zf),
+							(xi, yf, zf),
+							(xi, yf, zi),
+							(xi, yi, zi)]
+						vertices["color"][l:l+6] = color
+						vertices["normal"][l:l+6] = (+1.0,  0.0,  0.0)
+						l += 6
 
-					# view from negative z
-					myExtend( vertices, x  , y  , z  , aType,     0.0,  0.0, +1.0 )
-					myExtend( vertices, x  , y+d, z  , aType,     0.0,  0.0, +1.0 )
-					myExtend( vertices, x+d, y+d, z  , aType,     0.0,  0.0, +1.0 )
-					myExtend( vertices, x+d, y+d, z  , aType,     0.0,  0.0, +1.0 )
-					myExtend( vertices, x+d, y  , z  , aType,     0.0,  0.0, +1.0 )
-					myExtend( vertices, x  , y  , z  , aType,     0.0,  0.0, +1.0 )
+					if right in (0,None):
+						vertices["position"][l:l+6] = [
+							(xf, yi, zi),
+							(xf, yf, zf),
+							(xf, yi, zf),
+							(xf, yf, zf),
+							(xf, yi, zi),
+							(xf, yf, zi)]
+						vertices["color"][l:l+6] = color
+						vertices["normal"][l:l+6] = (-1.0,  0.0,  0.0)
+						l += 6
 
-					# view from positive z
-					myExtend( vertices, x  , y  , z+d, aType,     0.0,  0.0, -1.0 )
-					myExtend( vertices, x+d, y+d, z+d, aType,     0.0,  0.0, -1.0 )
-					myExtend( vertices, x  , y+d, z+d, aType,     0.0,  0.0, -1.0 )
-					myExtend( vertices, x+d, y+d, z+d, aType,     0.0,  0.0, -1.0 )
-					myExtend( vertices, x  , y  , z+d, aType,     0.0,  0.0, -1.0 )
-					myExtend( vertices, x+d, y  , z+d, aType,     0.0,  0.0, -1.0 )
+					if bottom in (0,None):
+						vertices["position"][l:l+6] = [
+							(xf, yi, zi),
+							(xf, yi, zf),
+							(xi, yi, zf),
+							(xi, yi, zf),
+							(xi, yi, zi),
+							(xf, yi, zi)]
+						vertices["color"][l:l+6] = color
+						vertices["normal"][l:l+6] = ( 0.0, +1.0,  0.0)
+						l += 6
 
-		# #-----------------------------------------------------------------------
+					if top in (0,None):
+						vertices["position"][l:l+6] = [
+							(xf, yf, zi),
+							(xi, yf, zf),
+							(xf, yf, zf),
+							(xi, yf, zf),
+							(xf, yf, zi),
+							(xi, yf, zi)]
+						vertices["color"][l:l+6] = color
+						vertices["normal"][l:l+6] = ( 0.0, -1.0,  0.0)
+						l += 6
 
-		# vertices = [
-		# 			0.0, 0.0, 0.0, 1.0,    +1.0,  0.0,  0.0,
-		# 			0.0, 0.0, 9.0, 1.0,    +1.0,  0.0,  0.0,
-		# 			0.0, 9.0, 9.0, 1.0,    +1.0,  0.0,  0.0,
-		# 			0.0, 9.0, 9.0, 1.0,    +1.0,  0.0,  0.0,
-		# 			0.0, 9.0, 0.0, 1.0,    +1.0,  0.0,  0.0,
-		# 			0.0, 0.0, 0.0, 1.0,    +1.0,  0.0,  0.0,
+					if front in (0,None):
+						vertices["position"][l:l+6] = [
+							(xi, yi, zi),
+							(xi, yf, zi),
+							(xf, yf, zi),
+							(xf, yf, zi),
+							(xf, yi, zi),
+							(xi, yi, zi)]
+						vertices["color"][l:l+6] = color
+						vertices["normal"][l:l+6] = ( 0.0,  0.0, +1.0)
+						l += 6
 
+					if back in (0,None):
+						vertices["position"][l:l+6] = [
+							(xi, yi, zf),
+						(xf, yf, zf),
+						(xi, yf, zf),
+						(xf, yf, zf),
+						(xi, yi, zf),
+						(xf, yi, zf)]
+						vertices["color"][l:l+6] = color
+						vertices["normal"][l:l+6] = ( 0.0,  0.0, -1.0)
+						l += 6
 
-		# 			9.0, 0.0, 0.0, 1.0,    -1.0,  0.0,  0.0,
-		# 			9.0, 9.0, 9.0, 1.0,    -1.0,  0.0,  0.0,
-		# 			9.0, 0.0, 9.0, 1.0,    -1.0,  0.0,  0.0,
-		# 			9.0, 9.0, 9.0, 1.0,    -1.0,  0.0,  0.0,
-		# 			9.0, 0.0, 0.0, 1.0,    -1.0,  0.0,  0.0,
-		# 			9.0, 9.0, 0.0, 1.0,    -1.0,  0.0,  0.0,
+		self.vertices = vertices[:l]
+		self.elements = l
 
+		stride = 4*10
+		shader.bufferData(vertices,self.vbo)
 
-		# 			9.0, 0.0, 0.0, 1.0,     0.0, +1.0,  0.0,
-		# 			9.0, 0.0, 9.0, 1.0,     0.0, +1.0,  0.0,
-		# 			0.0, 0.0, 9.0, 1.0,     0.0, +1.0,  0.0,
-		# 			0.0, 0.0, 9.0, 1.0,     0.0, +1.0,  0.0,
-		# 			0.0, 0.0, 0.0, 1.0,     0.0, +1.0,  0.0,
-		# 			9.0, 0.0, 0.0, 1.0,     0.0, +1.0,  0.0,
-
-
-		# 			9.0, 9.0, 0.0, 1.0,     0.0, -1.0,  0.0,
-		# 			0.0, 9.0, 9.0, 1.0,     0.0, -1.0,  0.0,
-		# 			9.0, 9.0, 9.0, 1.0,     0.0, -1.0,  0.0,
-		# 			0.0, 9.0, 9.0, 1.0,     0.0, -1.0,  0.0,
-		# 			9.0, 9.0, 0.0, 1.0,     0.0, -1.0,  0.0,
-		# 			0.0, 9.0, 0.0, 1.0,     0.0, -1.0,  0.0,
-
-
-		# 			0.0, 0.0, 0.0, 1.0,     0.0,  0.0, +1.0,
-		# 			0.0, 9.0, 0.0, 1.0,     0.0,  0.0, +1.0,
-		# 			9.0, 9.0, 0.0, 1.0,     0.0,  0.0, +1.0,
-		# 			9.0, 9.0, 0.0, 1.0,     0.0,  0.0, +1.0,
-		# 			9.0, 0.0, 0.0, 1.0,     0.0,  0.0, +1.0,
-		# 			0.0, 0.0, 0.0, 1.0,     0.0,  0.0, +1.0,
-
-
-		# 			0.0, 0.0, 9.0, 1.0,     0.0,  0.0, -1.0,
-		# 			9.0, 9.0, 9.0, 1.0,     0.0,  0.0, -1.0,
-		# 			0.0, 9.0, 9.0, 1.0,     0.0,  0.0, -1.0,
-		# 			9.0, 9.0, 9.0, 1.0,     0.0,  0.0, -1.0,
-		# 			0.0, 0.0, 9.0, 1.0,     0.0,  0.0, -1.0,
-		# 			9.0, 0.0, 9.0, 1.0,     0.0,  0.0, -1.0]
-
-		#-----------------------------------------------------------------------
-
-		self.elements = len(vertices)
-		vert = numpy.array(vertices,numpy.float32)
-
-		self.loc = shader.bindAttribute("position",vert,self.vbo,(4,GL_FLOAT,False,7*4,ctypes.c_void_p(0)))
-		self.norm = shader.bindAttribute("normal",vert,self.vbo,(3,GL_FLOAT,False,7*4,ctypes.c_void_p(4)))
+		offset = 4*0
+		shader.attribute("position",4,GL_FLOAT,False,stride,offset)
+		offset += 4*3
+		shader.attribute("color"   ,4,GL_FLOAT,False,stride,offset)
+		offset += 4*4
+		shader.attribute("normal"  ,4,GL_FLOAT,True ,stride,offset)
 
 	def render(self,shader):
 		if self.changed:
 			self.update(shader)
-		
+
 		#if this chunk is empty, we don't need to draw it
 		if self.elements == 0:
 			return
+
+		p_loc = shader.getAttribLocation("position")
+		c_loc = shader.getAttribLocation("color")
+		n_loc = shader.getAttribLocation("normal")
 		
-		glEnableVertexAttribArray(self.loc)
-		glEnableVertexAttribArray(self.norm)
-		glDrawArrays(GL_TRIANGLES,0,self.elements/7)
-		glDisableVertexAttribArray(self.loc)
-		glDisableVertexAttribArray(self.norm)
+		glBindBuffer(GL_ARRAY_BUFFER, self.vbo)
+		
+		stride = 4*10
+		offset = 4*0
+		glVertexAttribPointer(p_loc, 4, GL_FLOAT, False, stride, ctypes.c_void_p(offset))
+		offset += 4*3
+		glVertexAttribPointer(c_loc, 4, GL_FLOAT, False, stride, ctypes.c_void_p(offset))
+		offset += 4*4
+		glVertexAttribPointer(n_loc, 4, GL_FLOAT, True, stride, ctypes.c_void_p(offset))
+
+		glEnableVertexAttribArray(p_loc)
+		glEnableVertexAttribArray(c_loc)
+		glEnableVertexAttribArray(n_loc)
+		
+		glDrawArrays(GL_TRIANGLES,0,self.elements)
+
+		glDisableVertexAttribArray(p_loc)
+		glDisableVertexAttribArray(c_loc)
+		glDisableVertexAttribArray(n_loc)

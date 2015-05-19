@@ -1,12 +1,13 @@
 from OpenGL.GL import *
 import math
+import utils
 
 class Camera:
 	def __init__(self):
-		self.x = 0.0
+		self.x = -25.0
 		self.y = -2.5
-		self.z = -25.0
-		self._yaw = 0
+		self.z = 25.0
+		self._yaw = -180
 		self._pitch = 0
 
 	def yaw(self,dyaw):
@@ -37,7 +38,7 @@ class Camera:
 	def moveDown(self,distance):
 		self.y += distance
 
-	def lookThrough(self):
+	def lookThrough(self,shader):
 		glRotate(self._pitch,1.0,0.0,0.0)
 		glRotate(self._yaw,0.0,1.0,0.0)
 		glTranslate(self.x,self.y,self.z)

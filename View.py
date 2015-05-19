@@ -3,11 +3,7 @@ import math
 from pygame.locals import *
 from OpenGL.GL import *
 from Camera import *
-
-def perspectiveGL(fovy, aspect, near, far):
-	fH = math.tan(fovy/360.0) * math.pi * near
-	fW = fH * aspect
-	glFrustum(-fW,fW,-fH,fH,near,far)
+import utils
 
 class View:
 	def __init__(self):
@@ -17,28 +13,41 @@ class View:
 
 		(WIDTH,HEIGHT) = 640, 480
 		pygame.init()
-		pygame.display.set_mode((WIDTH,HEIGHT), OPENGL | DOUBLEBUF, 24)
+		self.screen = pygame.display.set_mode((WIDTH,HEIGHT), OPENGL | DOUBLEBUF, 24)
 		pygame.mouse.set_visible(False)
 		glClearColor (0.0, 0.5, 0.5, 1.0)
 
 		glEnable(GL_BLEND)
 		glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+		glHint (GL_LINE_SMOOTH_HINT, GL_NICEST)
 		glEnable(GL_CULL_FACE)
 		glEnable(GL_DEPTH_TEST)
 		glDepthFunc(GL_LESS)
-		
+
+		self.angle = 0;
+
+	def getSize(self):
+		return self.screen.get_size()
+
+	def reshape(self):
+		WIDTH,HEIGHT = self.getSize()
+
+		glViewport(0, 0, WIDTH,HEIGHT)
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
-		perspectiveGL(90.0,WIDTH/float(HEIGHT),0.1,50.0)
+		utils.perspectiveGL(90.0,WIDTH/float(HEIGHT),0.1,100.0)
 		glMatrixMode(GL_MODELVIEW)
+		glLoadIdentity()
 
 	def update(self):
-		self.shader.bindUniforms("viewPos",'3f',self.camera.x,self.camera.y,self.camera.z)
+		rad = math.radians(self.angle)
+		self.angle += 0.05
+		self.shader.uniform("lightPos",'3f',-50*math.cos(rad),-75.0,-50*math.sin(rad))
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		glLoadIdentity()
-		
-		self.camera.lookThrough()
+
+		self.camera.lookThrough(self.shader)
 
 		self.model.render(self.shader)
 

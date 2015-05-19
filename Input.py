@@ -20,6 +20,7 @@ class Input:
 		self.keyup = []
 		self.buttondown = []
 		self.buttonup = []
+		
 		for event in pygame.event.get():
 			if event.type == QUIT:
 				self.isCloseRequested = True
@@ -35,7 +36,7 @@ class Input:
 			if event.type == MOUSEBUTTONUP:
 				self.buttonup.append(event.button)
 				self.buttonhold[event.button] = False
-		
+			
 		if not self.mousefocus and pygame.mouse.get_focused():
 			self.mouseEntersScreen()
 		self.mousefocus = pygame.mouse.get_focused()

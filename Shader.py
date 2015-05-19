@@ -1,10 +1,12 @@
 from OpenGL.GL import *
 import numpy as np
+import utils
 
 class Shader:
 	def __init__(self,vertex,fragment):
 		self.code = (vertex,fragment)
 		self.program = None
+		self.locations = {}
 
 	def compile(self):
 		vertex,fragment = self.code
@@ -36,23 +38,54 @@ class Shader:
 		#make the program the default
 		glUseProgram(self.program)
 
-	def bindAttribute(self,att_name,data,buffer,(size,type,normalized,stride,offset)):
-		#http://wiki.lwjgl.org/index.php?title=GLSL_Tutorial:_Communicating_with_Shaders	
-
+	def getAttribLocation(self,att_name):
+		if self.locations.has_key(att_name):
+			return self.locations[att_name]
 		loc = glGetAttribLocation(self.program, att_name)
+
+		if loc < 0:
+			raise ValueError("getAttribLocation error for attribute "+att_name+": attribute not found")
+
+		self.locations[att_name] = loc
+		return loc
+
+	def setAttribLocation(self,index,att_name):
+		if self.locations.has_key(att_name):
+			raise ValueError("setAttribLocation error for attribute "+att_name+": attribute already exists")
+		glBindAttribLocation(self.program,index,att_name)
+		self.locations[att_name] = index
+
+	def bufferData(self, data, buffer):
+		glBindBuffer(GL_ARRAY_BUFFER, buffer)
+		glBufferData(GL_ARRAY_BUFFER, data, GL_DYNAMIC_DRAW)
+
+	def attribute(self,att_name,size,type,normalized,stride,offset):
+		loc = self.getAttribLocation(att_name)
 		
 		glEnableVertexAttribArray(loc)
-		
-		glBindBuffer(GL_ARRAY_BUFFER, buffer)
-		glBufferData(GL_ARRAY_BUFFER, data, GL_STATIC_DRAW)
 
-		glVertexAttribPointer(loc, size, type, normalized, stride, offset)
+		glVertexAttribPointer(loc, size, type, normalized, stride, ctypes.c_void_p(offset))
 		
 		glDisableVertexAttribArray(loc)
 
-		return loc
-
-	def bindUniforms(self,uni_name,type,*value):
+	def uniform(self,uni_name,type,*value):
+		"""
+		uniform(name,type, value ... )
+		name: name of the uniform
+		type: 1f, 2f, 3f, 4f, 1i, 2i, 3i, 4i, 22f, 23f, 24f, 33f, 32f, 34f, 44f, 42f, 43f
+		*value:
+		For the scalar commands:
+			[0][1][2][3] Specifies the new values to be used for the specified uniform variable.
+						 ( v0, v1, v2, v3 )
+		For the matrix array commands:
+			[0] Specifies the number of elements that are to be modified.
+				This should be 1 if the targeted uniform variable is not an array, and 1 or more if it is an array.
+				( count )
+			[1] Specifies whether to transpose the matrix as the values are loaded into the uniform variable.
+				( transpose )
+			[2] Specifies a pointer to an array of count values that will be used to update the specified uniform variable.
+				( value )
+		"""
 		# http://pyopengl.sourceforge.net/documentation/manual-3.0/glUniform.html
 		loc = glGetUniformLocation(self.program, uni_name)
 		if type == '1f':
@@ -63,6 +96,7 @@ class Shader:
 			glUniform3f(loc, value[0], value[1], value[2])
 		elif type == '4f':
 			glUniform4f(loc, value[0], value[1], value[2], value[3])
+		
 		elif type == '1i':
 			glUniform1i(loc, value[0])
 		elif type == '2i':
@@ -71,8 +105,29 @@ class Shader:
 			glUniform2i(loc, value[0], value[1], value[2])
 		elif type == '4i':
 			glUniform2i(loc, value[0], value[1], value[2], value[3])
+
+		# for matrices:  location , count , transpose , value
+		elif type == '22f':
+			glUniformMatrix2fv(loc,value[0],value[1],value[2])
+		elif type == '23f':
+			glUniformMatrix2x3fv(loc,value[0],value[1],value[2])
+		elif type == '24f':
+			glUniformMatrix2x4fv(loc,value[0],value[1],value[2])
+		elif type == '33f':
+			glUniformMatrix3fv(loc,value[0],value[1],value[2])
+		elif type == '32f':
+			glUniformMatrix3x2fv(loc,value[0],value[1],value[2])
+		elif type == '34f':
+			glUniformMatrix3x4fv(loc,value[0],value[1],value[2])
+		elif type == '44f':
+			glUniformMatrix4fv(loc,value[0],value[1],value[2])
+		elif type == '42f':
+			glUniformMatrix4x2fv(loc,value[0],value[1],value[2])
+		elif type == '43f':
+			glUniformMatrix4x3fv(loc,value[0],value[1],value[2])
+		
 		else:
-			raise ValueError("Unknown type %s" % type)
+			raise ValueError("Unknown type " + type)
 
 def shaderFromFile(vertex,fragment):
 	v = open(vertex,'r')

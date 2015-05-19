@@ -9,8 +9,9 @@ class Controller:
 
 	def __init__(self):
 		self.model = None
-		self.camera = None
+		self.view = None
 		self.running = True
+
 		self.t = pygame.time.get_ticks()
 		self.input = Input()
 		self.wireframe = False
@@ -32,24 +33,25 @@ class Controller:
 			self.running = False
 		
 		#if self.input.buttonHold(1):
-		self.camera.yaw(dx * Controller.mouseSensitivity)
-		self.camera.pitch(dy * Controller.mouseSensitivity)
+		self.view.camera.yaw(dx * Controller.mouseSensitivity)
+		self.view.camera.pitch(dy * Controller.mouseSensitivity)
 
 		if self.input.keyRelease(pygame.K_f):
 			pygame.display.toggle_fullscreen()
+			self.view.reshape()
 
 		if self.input.keyHold(pygame.K_w):
-			self.camera.walkForward(Controller.movementSpeed*dt)
+			self.view.camera.walkForward(Controller.movementSpeed*dt)
 		if self.input.keyHold(pygame.K_s):
-			self.camera.walkBackwards(Controller.movementSpeed*dt)
+			self.view.camera.walkBackwards(Controller.movementSpeed*dt)
 		if self.input.keyHold(pygame.K_a):
-			self.camera.strafeLeft(Controller.movementSpeed*dt)
+			self.view.camera.strafeLeft(Controller.movementSpeed*dt)
 		if self.input.keyHold(pygame.K_d):
-			self.camera.strafeRight(Controller.movementSpeed*dt)
+			self.view.camera.strafeRight(Controller.movementSpeed*dt)
 		if self.input.keyHold(pygame.K_SPACE):
-			self.camera.moveUp(Controller.movementSpeed*dt)
+			self.view.camera.moveUp(Controller.movementSpeed*dt)
 		if self.input.keyHold(pygame.K_LSHIFT):
-			self.camera.moveDown(Controller.movementSpeed*dt)
+			self.view.camera.moveDown(Controller.movementSpeed*dt)
 
 		if (not self.wireframe) and self.input.keyPress(pygame.K_p):
 			glPolygonMode( GL_FRONT_AND_BACK, GL_LINE )
@@ -58,8 +60,6 @@ class Controller:
 		elif self.wireframe and self.input.keyPress(pygame.K_p):
 			glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
 			self.wireframe = False
-
-
 
 	def close(self):
 		pygame.quit()

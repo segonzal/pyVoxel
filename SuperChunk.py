@@ -29,7 +29,6 @@ class SuperChunk:
 	def set(self,x,y,z,type):
 		(SCX,SCY,SCZ) = SuperChunk.SIZE
 		(CX,CY,CZ) = Chunk.SIZE
-
 		cx = x / CX
 		cy = y / CY
 		cz = z / CZ
@@ -38,10 +37,10 @@ class SuperChunk:
 		y %= CY
 		z %= CZ
 
-		n = SCX*SCY*z + SCX*y + x
+		n = SCX*SCY*cz + SCX*cy + cx
 		if self.chunks[n] is None:
-			self.chunks[n] = Chunk()
-
+			pos = (cx*CX,cy*CY,cz*CZ)
+			self.chunks[n] = Chunk(pos)
 		self.chunks[n].set(x,y,z,type)
 
 	def render(self,shader):
@@ -53,6 +52,4 @@ class SuperChunk:
 					n = SCX*SCY*z + SCX*y + x
 					if self.chunks[n] is None:
 						continue
-					#glLoadIdentity()
-					#glTranslate(x * CX, y * CY, z * CZ)
 					self.chunks[n].render(shader)
