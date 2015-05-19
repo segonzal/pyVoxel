@@ -33,7 +33,9 @@ class Chunk:
 		(0.0,0.5,0.5,1.0),
 		(0.5,0.0,0.5,1.0)]
 
-	def __init__(self):
+	def __init__(self,parent,position):
+		self.parent = parent
+		self.position = position
 		(x,y,z) = Chunk.SIZE
 		self.voxels = [None]*x*y*z
 		self.changed = True
@@ -42,10 +44,9 @@ class Chunk:
 
 	def get(self,x,y,z):
 		(CX,CY,CZ) = Chunk.SIZE
-
-		if x<0 or x>=CX: return 0
-		if y<0 or y>=CY: return 0
-		if z<0 or z>=CZ: return 0
+		if (x<0 or x>=CX) or (y<0 or y>=CY) or (z<0 or z>=CZ):
+			(px,py,pz) = self.position
+			return self.parent.get(px+x,py+y,pz+z)
 
 		n = CX*CY*z + CX*y + x
 		return self.voxels[n]

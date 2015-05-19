@@ -12,6 +12,9 @@ class SuperChunk:
 		(SCX,SCY,SCZ) = SuperChunk.SIZE
 		(CX,CY,CZ) = Chunk.SIZE
 
+		if (x<0 or x>=CX*SCX) or (y<0 or y>=CY*SCY) or (z<0 or z>=CZ*SCZ):
+			return 0
+
 		cx = x / CX
 		cy = y / CY
 		cz = z / CZ
@@ -20,7 +23,7 @@ class SuperChunk:
 		y %= CY
 		z %= CZ
 
-		n = SCX*SCY*z + SCX*y + x
+		n = SCX*SCY*cz + SCX*cy + cx
 		if self.chunks[n] is None:
 			return 0
 		else:
@@ -39,8 +42,8 @@ class SuperChunk:
 
 		n = SCX*SCY*cz + SCX*cy + cx
 		if self.chunks[n] is None:
-			#pos = (cx*CX,cy*CY,cz*CZ)
-			self.chunks[n] = Chunk()
+			pos = (cx*CX,cy*CY,cz*CZ)
+			self.chunks[n] = Chunk(self,pos)
 		self.chunks[n].set(x,y,z,type)
 
 	def render(self,shader):
