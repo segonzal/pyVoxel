@@ -39,8 +39,8 @@ class SuperChunk:
 
 		n = SCX*SCY*cz + SCX*cy + cx
 		if self.chunks[n] is None:
-			pos = (cx*CX,cy*CY,cz*CZ)
-			self.chunks[n] = Chunk(pos)
+			#pos = (cx*CX,cy*CY,cz*CZ)
+			self.chunks[n] = Chunk()
 		self.chunks[n].set(x,y,z,type)
 
 	def render(self,shader):
@@ -52,4 +52,5 @@ class SuperChunk:
 					n = SCX*SCY*z + SCX*y + x
 					if self.chunks[n] is None:
 						continue
+					shader.uniform("translate",'3f',CX*x,CY*y,CZ*z)
 					self.chunks[n].render(shader)

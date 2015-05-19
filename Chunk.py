@@ -33,8 +33,7 @@ class Chunk:
 		(0.0,0.5,0.5,1.0),
 		(0.5,0.0,0.5,1.0)]
 
-	def __init__(self,position=(0,0,0)):
-		self.position = position
+	def __init__(self):
 		(x,y,z) = Chunk.SIZE
 		self.voxels = [None]*x*y*z
 		self.changed = True
@@ -66,7 +65,6 @@ class Chunk:
 								("position", numpy.float32, 3),
 								("color"   , numpy.float32, 4),
 								("normal"  , numpy.float32, 3)])
-		(px,py,pz) = self.position
 		l = 0
 		for x in xrange(CX):
 			for y in xrange(CY):
@@ -85,7 +83,7 @@ class Chunk:
 					if aType in (0,None):
 						continue
 
-					(xi,yi,zi) = (px+x,py+y,pz+z)
+					(xi,yi,zi) = (x,y,z)
 					(xf,yf,zf) = (xi+1,yi+1,zi+1)
 					#vertices[l:l+36] = utils.createCube((i,j,k),(i+1,j+1,k+1),Chunk.color[aType-1])
 
