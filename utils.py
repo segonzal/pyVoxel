@@ -87,7 +87,11 @@ def identity():
 	return numpy.eye(4,dtype=numpy.float32)
 
 def rotate(angle,x,y,z):
-	(x,y,z) = normalize(x,y,z)
+	# normalize (x,y,z)
+	d = math.sqrt(x*x+y*y+z*z)
+	x/=d
+	y/=d
+	z/=d
 	angle = math.radians(angle)
 
 	c = math.cos(angle)
@@ -106,4 +110,38 @@ def rotate(angle,x,y,z):
 	m[0,2] = x*z*C-y*s
 	m[1,2] = y*z*C+x*s
 	m[2,2] = z*z*C+c
+	return m
+
+def ortho(left,right,bottom,top,near,far):
+	m = numpy.eye(4,dtype=numpy.float32)
+
+	m[0,0] = 2.0/(right-left)
+
+	m[1,1] = 2.0/(top-bottom)
+
+	m[2,2] = -2.0/(far-near)
+
+	m[0,3] = -float(right+left)/(right-left)
+	m[1,3] = -float(top+bottom)/(top-bottom)
+	m[2,3] = -float(far+near)/(far-near)
+	return m
+
+def perspective(fovy, aspect, near, far):
+ 	fH = math.tan(fovy/360.0) * math.pi * near
+ 	fW = fH * aspect
+ 	return frustum(-fW,fW,-fH,fH,near,far)
+
+def frustum(left,right,bottom,top,near,far):
+	m = numpy.eye(4,dtype=numpy.float32)
+
+	m[0,0] = 2.0*near/(right-left)
+	m[1,1] = 2.0*near/(top-bottom)
+	
+	m[0,2] = float(right+left)/(right-left)
+	m[1,2] = float(top+bottom)/(top-bottom)
+	m[2,2] = float(far+near)/(far-near)
+	m[3,2] = -1
+
+	m[2,3] = 2.0*far*near/(far-near)
+	m[3,3] = 0
 	return m

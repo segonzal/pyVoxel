@@ -32,7 +32,6 @@ class Controller:
 		if self.input.keyPress(pygame.K_ESCAPE):
 			self.running = False
 		
-		#if self.input.buttonHold(1):
 		self.view.camera.yaw(dx * Controller.mouseSensitivity)
 		self.view.camera.pitch(dy * Controller.mouseSensitivity)
 
@@ -60,6 +59,17 @@ class Controller:
 		elif self.wireframe and self.input.keyPress(pygame.K_p):
 			glPolygonMode( GL_FRONT_AND_BACK, GL_FILL )
 			self.wireframe = False
+
+		fx,fy,fz = self.view.camera.getFocus()
+		fx,fy,fz = int(fx),int(fy),int(fz)
+
+		if self.input.buttonPress(1):
+			#print fx,fy,fz
+			self.model.set(fx,fy,fz,4)
+		elif self.input.buttonPress(3):
+			#print fx,fy,fz
+			self.model.set(fx,fy,fz,0)
+
 
 	def close(self):
 		pygame.quit()

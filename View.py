@@ -23,8 +23,8 @@ class View:
 		glEnable(GL_CULL_FACE)
 		glEnable(GL_DEPTH_TEST)
 		glDepthFunc(GL_LESS)
-
-		self.angle = 0;
+		
+		#self.angle = 0;
 
 	def getSize(self):
 		return self.screen.get_size()
@@ -40,15 +40,19 @@ class View:
 		glLoadIdentity()
 
 	def update(self):
-		rad = math.radians(self.angle)
-		self.angle += 0.05
-		self.shader.uniform("lightPos",'3f',-50*math.cos(rad),-75.0,-50*math.sin(rad))
+		#rad = math.radians(self.angle)
+		#self.angle += 0.15
+		#self.shader.uniform("lightPos",'3f',-50*math.cos(rad),-75.0,-50*math.sin(rad))
+		#self.shader.uniform("lightPos",'3f',25*math.cos(rad),500*math.sin(rad),25)
+		self.shader.uniform("lightPos",'3f',25,500,25)
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 		glLoadIdentity()
 
 		self.camera.lookThrough(self.shader)
-
+		self.shader.uniform("flag",'1f',0)
 		self.model.render(self.shader)
+
+		self.camera.drawFocus(self.shader)
 
 		pygame.display.flip()
