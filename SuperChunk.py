@@ -53,7 +53,7 @@ class SuperChunk:
 			for y in xrange(SCY):
 				for z in xrange(SCZ):
 					n = SCX*SCY*z + SCX*y + x
-					if self.chunks[n] is None:
+					if self.chunks[n] is None or self.chunks[n].isFull():
 						continue
 					shader.uniform("translate",'3f',CX*x,CY*y,CZ*z)
 					self.chunks[n].render(shader)

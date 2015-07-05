@@ -41,6 +41,7 @@ class Chunk:
 		self.changed = True
 		self.vbo = glGenBuffers(1)
 		self.elements = 0
+		self.n = 0
 
 	def get(self,x,y,z):
 		(CX,CY,CZ) = Chunk.SIZE
@@ -56,6 +57,14 @@ class Chunk:
 		n = CX*CY*z + CX*y + x
 		self.voxels[n] = aType
 		self.changed = True
+		if aType==0:
+			self.n-=1
+		else:
+			self.n+=1
+
+	def isFull(self):
+		(CX,CY,CZ) = Chunk.SIZE
+		return self.n == CX*CY*CZ
 
 	def update(self,shader):
 		self.changed = False
@@ -169,11 +178,12 @@ class Chunk:
 		shader.bufferData(vertices,self.vbo)
 
 		offset = 4*0
-		shader.attribute("position",4,GL_FLOAT,False,stride,offset)
+		shader.attribute("position",3,GL_FLOAT,False,stride,offset)
 		offset += 4*3
 		shader.attribute("color"   ,4,GL_FLOAT,False,stride,offset)
 		offset += 4*4
-		shader.attribute("normal"  ,4,GL_FLOAT,True ,stride,offset)
+		shader.attribute("normal"  ,3,GL_FLOAT,True ,stride,offset)
+		print "finished updating chunk", self.position
 
 	def render(self,shader):
 		if self.changed:
@@ -191,11 +201,11 @@ class Chunk:
 		
 		stride = 4*10
 		offset = 4*0
-		glVertexAttribPointer(p_loc, 4, GL_FLOAT, False, stride, ctypes.c_void_p(offset))
+		glVertexAttribPointer(p_loc, 3, GL_FLOAT, False, stride, ctypes.c_void_p(offset))
 		offset += 4*3
 		glVertexAttribPointer(c_loc, 4, GL_FLOAT, False, stride, ctypes.c_void_p(offset))
 		offset += 4*4
-		glVertexAttribPointer(n_loc, 4, GL_FLOAT, True, stride, ctypes.c_void_p(offset))
+		glVertexAttribPointer(n_loc, 3, GL_FLOAT, True, stride, ctypes.c_void_p(offset))
 
 		glEnableVertexAttribArray(p_loc)
 		glEnableVertexAttribArray(c_loc)

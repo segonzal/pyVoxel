@@ -60,6 +60,22 @@ class Shader:
 		glBufferData(GL_ARRAY_BUFFER, data, GL_DYNAMIC_DRAW)
 
 	def attribute(self,att_name,size,type,normalized,stride,offset):
+		"""
+		attribute(name,size,type,normalized,stride,offset)
+
+		name: name of the attribute
+		size: Specifies the number of components per generic vertex attribute.
+			  Must be 1, 2, 3, 4.
+		type: Specifies the data type of each component in the array.
+			  GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT,
+			  GL_UNSIGNED_INT, GL_FLOAT and GL_DOUBLE.
+		normalized: Specifies whether fixed-point data values should be normalized (True) or
+			  converted directly as fixed-point values (False)
+		stride: Specifies the byte offset between consecutive generic vertex attributes.
+		offset: Specifies a offset of the first component of the first generic vertex attribute in the
+				array in the data store of the buffer currently bound to the GL_ARRAY_BUFFER target.
+		"""
+		# https://www.opengl.org/sdk/docs/man/html/glVertexAttribPointer.xhtml
 		loc = self.getAttribLocation(att_name)
 		
 		glEnableVertexAttribArray(loc)
@@ -71,6 +87,7 @@ class Shader:
 	def uniform(self,uni_name,type,*value):
 		"""
 		uniform(name,type, value ... )
+
 		name: name of the uniform
 		type: 1f, 2f, 3f, 4f, 1i, 2i, 3i, 4i, 22f, 23f, 24f, 33f, 32f, 34f, 44f, 42f, 43f
 		*value:

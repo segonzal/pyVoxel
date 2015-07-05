@@ -8,20 +8,42 @@ from OpenSimplexNoise import *
 
 import cv2
 def loadHGT(chunk):
-	S = 16*5#S = 16*10
-	H = 16#H = 16*2
+	#S = 16*5
+	S = 16*10
+	#H = 16
+	H = 16*3
 
 	hmap = cv2.imread("hmap.png",cv2.CV_LOAD_IMAGE_GRAYSCALE)
 	hmap = cv2.resize( hmap, (S,S) )
 	(h,w) = hmap.shape
 	for x in xrange(h):
 		for z in xrange(w):
-			y = (255-hmap[x,z])*H/255
+			y = (hmap[x,z])*H/255
 			for i in range(y):
 				chunk.set(x,i,z,3)
 			chunk.set(x,y,z,2)
+	print "finished reading image"
 
 def loadWorld(chunk):
+	S = 16*10
+	H = 16*2
+	noise = OpenSimplexNoise(345789876543456787654l)
+	FEATURE_SIZE = 2.0
+	hmap = cv2.imread("hmap.png",cv2.CV_LOAD_IMAGE_GRAYSCALE)
+	hmap = cv2.resize( hmap, (S,S) )
+	(h,w) = hmap.shape
+	for x in xrange(h):
+		for z in xrange(w):
+			y = (hmap[x,z])*H/255
+			for i in range(y):
+				value = noise.eval(x/FEATURE_SIZE,i/FEATURE_SIZE,z/FEATURE_SIZE)
+				if value < 0.5:
+					chunk.set(x,i,z,3)
+				else:
+					chunk.set(x,i,z,1)
+			chunk.set(x,y,z,2)
+
+def loadOres(chunk):
 	S = 16*8
 	H = 16
 	noise = OpenSimplexNoise(345789876543456787654l)
@@ -68,8 +90,6 @@ def main():
 	view.reshape()
 
 	chunk = SuperChunk()
-	#loadWorld(chunk)
-	#random(chunk)
 	loadHGT(chunk)
 
 	controller.model = view.model = chunk
